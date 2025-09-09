@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     gazebo \
     libglu1-mesa-dev \
-    nano \
+    vim \
     python3-pip \
     python3-pydantic \
     ros-humble-gazebo-ros \
