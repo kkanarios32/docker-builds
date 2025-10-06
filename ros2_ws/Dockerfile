@@ -1,3 +1,4 @@
+FROM nvidia/cuda:12.2.0-base-ubuntu22.04
 FROM osrf/ros:humble-desktop-full
 
 ENV NVIDIA_VISIBLE_DEVICES \
@@ -10,12 +11,12 @@ ENV XDG_RUNTIME_DIR=/tmp
 
 RUN apt-get update && apt-get install -y \
     cmake \
-    curl \
     gazebo \
     libglu1-mesa-dev \
     vim \
     python3-pip \
     python3-pydantic \
+    python3-venv \
     ros-humble-gazebo-ros \
     ros-humble-gazebo-ros-pkgs \
     ros-humble-joint-state-publisher \
@@ -39,7 +40,20 @@ RUN apt-get update && apt-get install -y \
     wget \
     xorg-dev \
     x11-apps \
-    zsh
+    build-essential \ 
+    libboost-program-options-dev \ 
+    libusb-1.0-0-dev \ 
+    ros-humble-tf-transformations \ 
+    libjsoncpp-dev
+
+RUN apt-get install -y  curl lsb-release gnupg
+RUN curl https://packages.osrfoundation.org/gazebo.gpg --output /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg 
+RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/gazebo-stable.list > /dev/null
+RUN echo " CURL DONE"
+
+RUN  apt-get update 
+RUN  apt-get install -y gz-harmonic
+RUN echo "Ignition Installed"
 
 RUN pip3 install setuptools==58.2.0
 
@@ -47,6 +61,18 @@ RUN wget https://github.com/openrr/urdf-viz/releases/download/v0.38.2/urdf-viz-x
     tar -xvzf urdf-viz-x86_64-unknown-linux-gnu.tar.gz -C /usr/local/bin/ && \
     chmod +x /usr/local/bin/urdf-viz && \
     rm -f urdf-viz-x86_64-unknown-linux-gnu.tar.gz
+
+# The installer requires curl (and certificates) to download the release archive
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates
+
+# Download the latest installer
+ADD https://astral.sh/uv/install.sh /uv-installer.sh
+
+# Run the installer then remove it
+RUN sh /uv-installer.sh && rm /uv-installer.sh
+
+# Ensure the installed binary is on the `PATH`
+ENV PATH="/root/.local/bin/:$PATH"
 
 RUN apt-get autoremove -y \
     && apt-get clean -y \
